@@ -5,6 +5,14 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# One release update at a time, so two quick pushes can't race on the tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write  # create the release and move its tag
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,13 +26,21 @@ jobs:
             experimental-features = nix-command flakes
 
       - name: Build PDF and DOCX
-        run: ./build.sh
+        run: scripts/build.sh
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: songbook
-          path: |
-            songs.pdf
-            songs.docx
-            berimbau-ritmai.pdf
-          if-no-files-found: error
+      # A single release tagged "latest", updated in place, so the download
+      # links never change:
+      #   https://github.com/<owner>/<repo>/releases/download/latest/songs.pdf
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Built from ${GITHUB_SHA::7} on $(date -u +%Y-%m-%d)."
+          git tag -f latest
+          git push -f origin latest
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest dist/* --clobber
+            gh release edit latest --notes "$notes" --latest
+          else
+            gh release create latest dist/* --title "Songbook" --notes "$notes" --latest
+          fi
