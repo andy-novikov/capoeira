@@ -1,0 +1,30 @@
+name: Build songbook
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # build.sh gets pandoc and typst from the nixpkgs pinned in flake.lock.
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Build PDF and DOCX
+        run: ./build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: songbook
+          path: |
+            songs.pdf
+            songs.docx
+            berimbau-ritmai.pdf
+          if-no-files-found: error

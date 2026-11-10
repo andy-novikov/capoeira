@@ -1,0 +1,18 @@
+# PDF (typst) layout options for build.sh
+papersize: a4
+columns: 2
+fontsize: 10pt
+mainfont: Libertinus Serif  # ships with typst, no system fonts needed
+margin:
+  x: 1.75cm
+  y: 1.75cm
+# Song headings: larger, coloured, with a thin rule underneath.
+header-includes:
+  - |
+    ```{=typst}
+    #show heading.where(level: 2): it => block(
+      width: 100%, above: 1.3em, below: 0.6em, sticky: true,
+      stroke: (bottom: 0.6pt + rgb("#8b1e1e")), inset: (bottom: 3pt),
+    )[#set par(justify: false)
+    #text(size: 1.25em, weight: "bold", fill: rgb("#8b1e1e"), hyphenate: false)[#it.body]]
+    ```
